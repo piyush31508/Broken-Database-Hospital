@@ -6,11 +6,14 @@ import {
 
 /**
  * Server-only Supabase client.
- * Prefer calling from Server Components, Route Handlers, or server actions.
- * SQL execution for the game is not wired yet.
+ *
+ * The RPC lives in the public schema, so the client uses
+ * public as its default schema.
+ *
+ * The RPC itself queries the hospital schema.
  */
 export function createServerClient(): SupabaseClient {
-  const { url, serverKey, schema } = getSupabaseServerConfig();
+  const { url, serverKey } = getSupabaseServerConfig();
 
   return createClient(url, serverKey, {
     auth: {
@@ -18,7 +21,7 @@ export function createServerClient(): SupabaseClient {
       autoRefreshToken: false,
     },
     db: {
-      schema,
+      schema: "public",
     },
   });
 }

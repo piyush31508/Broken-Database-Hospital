@@ -7,7 +7,11 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import type { CaseBrief, HospitalStatus, PlayerStats } from "@/lib/types";
+import type {
+  CaseBrief,
+  HospitalStatus,
+  PlayerStats,
+} from "@/lib/types";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CasePanel } from "@/components/cases/CasePanel";
@@ -29,33 +33,103 @@ export function AppShell({
 }: AppShellProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ---------------------------------------------------------------------------
+  // Mutable game state
+  // ---------------------------------------------------------------------------
+
+  const [gameCases, setGameCases] = useState<CaseBrief[]>(cases);
+  const [gamePlayer, setGamePlayer] =
+    useState<PlayerStats>(player);
 
   const defaultCaseId =
     initialCaseId ??
-    cases.find((c) => c.status === "active")?.id ??
-    cases[0]?.id ??
+    gameCases.find((c) => c.status === "active")?.id ??
+    gameCases[0]?.id ??
     "";
 
-  const [selectedCaseId, setSelectedCaseId] = useState(defaultCaseId);
+  const [selectedCaseId, setSelectedCaseId] =
+    useState(defaultCaseId);
 
   const selectedCase = useMemo(
-    () => cases.find((c) => c.id === selectedCaseId) ?? cases[0],
-    [cases, selectedCaseId],
+    () =>
+      gameCases.find((c) => c.id === selectedCaseId) ??
+      gameCases[0],
+    [gameCases, selectedCaseId],
   );
+
+  // ---------------------------------------------------------------------------
+  // Case selection
+  // ---------------------------------------------------------------------------
 
   const handleSelectCase = (id: string) => {
     setSelectedCaseId(id);
     setMobileOpen(false);
   };
 
+  // ---------------------------------------------------------------------------
+  // Case completion
+  // ---------------------------------------------------------------------------
+
+  const handleCaseSolved = (caseId: string) => {
+    const solvedCase = gameCases.find(
+      (caseItem) => caseItem.id === caseId,
+    );
+  
+    if (!solvedCase || solvedCase.status === "resolved") {
+      return;
+    }
+  
+    // Mark the solved case as resolved and unlock Case 002.
+    setGameCases((currentCases) =>
+      currentCases.map((caseItem) => {
+        if (caseItem.id === caseId) {
+          return {
+            ...caseItem,
+            status: "resolved" as const,
+          };
+        }
+  
+        if (
+          caseItem.id === "case-002" &&
+          caseItem.status === "locked"
+        ) {
+          return {
+            ...caseItem,
+            status: "diagnosing" as const,
+          };
+        }
+  
+        return caseItem;
+      }),
+    );
+  
+    // Award XP and update player stats.
+    setGamePlayer((currentPlayer) => ({
+      ...currentPlayer,
+      xp: currentPlayer.xp + solvedCase.xpReward,
+      casesSolved: currentPlayer.casesSolved + 1,
+      streak: currentPlayer.streak + 1,
+    }));
+  };
+
+  // ---------------------------------------------------------------------------
+  // Sidebar
+  // ---------------------------------------------------------------------------
+
   const sidebar = (
     <Sidebar
-      cases={cases}
+      cases={gameCases}
       selectedCaseId={selectedCase?.id ?? ""}
       onSelectCase={handleSelectCase}
     />
   );
+
+  // ---------------------------------------------------------------------------
+  // Layout
+  // ---------------------------------------------------------------------------
 
   return (
     <Box
@@ -77,12 +151,25 @@ export function AppShell({
           inset: 0,
           zIndex: 0,
           background: `
-            radial-gradient(ellipse 80% 50% at 10% -10%, rgba(244,63,94,0.12), transparent 55%),
-            radial-gradient(ellipse 60% 40% at 90% 0%, rgba(45,212,191,0.1), transparent 50%),
-            radial-gradient(ellipse 50% 30% at 50% 100%, rgba(56,189,248,0.06), transparent 55%)
+            radial-gradient(
+              ellipse 80% 50% at 10% -10%,
+              rgba(244,63,94,0.12),
+              transparent 55%
+            ),
+            radial-gradient(
+              ellipse 60% 40% at 90% 0%,
+              rgba(45,212,191,0.1),
+              transparent 50%
+            ),
+            radial-gradient(
+              ellipse 50% 30% at 50% 100%,
+              rgba(56,189,248,0.06),
+              transparent 55%
+            )
           `,
         }}
       />
+
       <Box
         aria-hidden
         className="hospital-grid"
@@ -95,14 +182,22 @@ export function AppShell({
         }}
       />
 
-      <Box sx={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
+      {/* Header */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          flexShrink: 0,
+        }}
+      >
         <Header
           hospital={hospital}
-          player={player}
+          player={gamePlayer}
           onMenuClick={() => setMobileOpen(true)}
         />
       </Box>
 
+      {/* Main content */}
       <Box
         sx={{
           position: "relative",
@@ -112,6 +207,7 @@ export function AppShell({
           minHeight: 0,
         }}
       >
+        {/* Desktop sidebar */}
         {isDesktop ? (
           <Box
             component="nav"
@@ -126,11 +222,14 @@ export function AppShell({
             {sidebar}
           </Box>
         ) : (
+          /* Mobile sidebar */
           <Drawer
             variant="temporary"
             open={mobileOpen}
             onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
+            ModalProps={{
+              keepMounted: true,
+            }}
             sx={{
               "& .MuiDrawer-paper": {
                 width: SIDEBAR_WIDTH,
@@ -142,6 +241,7 @@ export function AppShell({
           </Drawer>
         )}
 
+        {/* Case content */}
         <Box
           component="main"
           sx={{
@@ -151,9 +251,17 @@ export function AppShell({
           }}
         >
           {selectedCase ? (
-            <CasePanel caseItem={selectedCase} />
+            <CasePanel
+              caseItem={selectedCase}
+              onCaseSolved={handleCaseSolved}
+            />
           ) : (
-            <Box sx={{ p: 4, color: "text.secondary" }}>
+            <Box
+              sx={{
+                p: 4,
+                color: "text.secondary",
+              }}
+            >
               No cases in the queue.
             </Box>
           )}

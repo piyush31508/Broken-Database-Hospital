@@ -75,7 +75,7 @@ export function SqlEditor({
             fontWeight: 600,
           }}
         >
-          {readOnly ? "READ ONLY" : "EDITABLE · RUN DISABLED"}
+          {readOnly ? "READ ONLY" : "EDITABLE · LIVE DATABASE"}
         </Typography>
       </Box>
       <MonacoEditor
