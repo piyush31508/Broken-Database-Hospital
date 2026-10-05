@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070b10;
+  --foreground: #e8eef4;
+  --hospital-panel: #121a22;
+  --hospital-elevated: #1a2430;
+  --hospital-border: #1e2a36;
+  --hospital-monitor: #2dd4bf;
+  --hospital-critical: #f43f5e;
+  --hospital-warning: #f59e0b;
+  --hospital-stable: #34d399;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-hospital-panel: var(--hospital-panel);
+  --color-hospital-elevated: var(--hospital-elevated);
+  --color-hospital-border: var(--hospital-border);
+  --color-hospital-monitor: var(--hospital-monitor);
+  --color-hospital-critical: var(--hospital-critical);
+  --color-hospital-warning: var(--hospital-warning);
+  --color-hospital-stable: var(--hospital-stable);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ibm-plex-sans), "IBM Plex Sans", sans-serif;
+  margin: 0;
+}
+
+/* Subtle clinical grid for atmosphere */
+.hospital-grid {
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+}
+
+/* Soft scrollbar for dark panels */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #243040;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #314255;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.35);
+  color: #e8eef4;
+}
