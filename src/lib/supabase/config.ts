@@ -59,3 +59,12 @@ export function isSupabaseConfigured(): boolean {
     return false;
   }
 }
+
+export function isSupabaseAuthConfigured(): boolean {
+  try {
+    const { url, publishableKey } = getSupabaseServerConfig();
+    return Boolean(url && publishableKey);
+  } catch {
+    return false;
+  }
+}

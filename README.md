@@ -7,7 +7,7 @@ Gamified SQL learning. The hospital database is broken. Patients are waiting. Fi
 - **Next.js** (App Router) + TypeScript
 - **Tailwind CSS** + **Material UI**
 - **Monaco Editor** (SQL editor UI)
-- **PostgreSQL via Supabase** (client stub only — execution not wired yet)
+- **PostgreSQL + Auth via Supabase**
 
 ## Getting started
 
@@ -18,11 +18,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Optional Supabase env vars (not required for the UI foundation):
+## Authentication
 
 ```bash
-cp .env.example .env.local
+copy .env.example .env.local
 ```
+
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in
+`.env.local` using your Supabase project's API settings. The legacy
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is also supported. Never put a service-role key
+in a `NEXT_PUBLIC_` variable.
+
+Email/password sign-up and sign-in use Supabase Auth. If email confirmation is
+enabled, add `http://localhost:3000/auth/callback` to the Supabase project's
+allowed redirect URLs. Add the production callback URL there when deploying.
+The dashboard and SQL query endpoint require an authenticated session.
 
 ## Project structure
 
@@ -37,7 +47,7 @@ src/
     ui/                 # Reusable badges, progress, pulse
   lib/
     data/               # Mock cases & player stats
-    supabase/           # Browser client stub
+    supabase/           # Supabase browser/server clients and configuration
     theme.ts            # MUI dark hospital theme
     types/              # Shared TypeScript types
   providers/            # Theme + MUI App Router cache
@@ -55,6 +65,6 @@ Server config lives in `src/lib/supabase/config.ts` + `server.ts`.
 
 ## Current scope
 
-- UI foundation (dashboard, cases, Monaco editor — run disabled)
+- Dashboard, cases, Monaco editor, and Supabase email/password authentication
 - Case 001 schema + seed (`patients` / `admissions`)
-- No SQL execution, auth, or other case tables yet
+- No persistent player progress or other case tables yet

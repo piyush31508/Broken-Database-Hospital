@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { tryCreateServerClient } from "@/lib/supabase/server";
+import {
+  tryCreateAuthServerClient,
+  tryCreateServerClient,
+} from "@/lib/supabase/server";
 
 type QueryRequest = {
   query?: string;
-  playerId?: string;
 };
 
 function isAllowedCase003IndexQuery(query: string): boolean {
@@ -26,10 +28,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as QueryRequest;
     const query = body.query?.trim();
-    const playerId = body.playerId?.trim();
 
-   
-    
     if (!query) {
       return NextResponse.json(
         {
@@ -47,6 +46,44 @@ export async function POST(request: Request) {
           error: "Query is too long.",
         },
         { status: 400 },
+      );
+    }
+
+    const authClient = await tryCreateAuthServerClient();
+
+    if (!authClient) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Authentication is not configured.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
+
+    if (authError && authError.name !== "AuthSessionMissingError") {
+      console.error("Query API authentication error:", authError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unable to verify your session.",
+        },
+        { status: 401 },
+      );
+    }
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Sign in to execute queries.",
+        },
+        { status: 401 },
       );
     }
 
@@ -78,21 +115,11 @@ export async function POST(request: Request) {
         );
       }
 
-      if (!playerId) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Player ID is required.",
-          },
-          { status: 400 },
-        );
-      }
-
       // Record the Case 003 index action for this player.
       const { data, error } = await supabase.rpc(
         "record_case_003_index",
         {
-          p_player_id: playerId,
+          p_player_id: user.id,
         }
       );
 

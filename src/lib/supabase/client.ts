@@ -2,18 +2,20 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Browser Supabase client.
- * Uses public URL + anon key only. Do not use the service role key here.
- * SQL execution and auth are intentionally not implemented yet.
+ * Uses public URL + publishable/anon key only. Never use the service role key
+ * in browser code. Cookie-backed authentication is handled by server.ts.
  */
 export function createBrowserClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !anonKey) {
+  if (!url || !publishableKey) {
     return null;
   }
 
-  return createClient(url, anonKey, {
+  return createClient(url, publishableKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

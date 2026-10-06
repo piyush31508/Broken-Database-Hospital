@@ -5,24 +5,33 @@ import {
   Box,
   IconButton,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import type { HospitalStatus, PlayerStats } from "@/lib/types";
 import { HospitalStatusBadge } from "@/components/player/HospitalStatusBadge";
 import { XpBar } from "@/components/player/XpBar";
 import { RankBadge } from "@/components/player/RankBadge";
+import { signOut } from "@/app/login/actions";
 
 type HeaderProps = {
   hospital: HospitalStatus;
   player: PlayerStats;
+  userEmail: string;
   onMenuClick: () => void;
 };
 
-export function Header({ hospital, player, onMenuClick }: HeaderProps) {
+export function Header({
+  hospital,
+  player,
+  userEmail,
+  onMenuClick,
+}: HeaderProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -103,6 +112,18 @@ export function Header({ hospital, player, onMenuClick }: HeaderProps) {
 
         <XpBar player={player} />
         <RankBadge rank={player.rank} displayName={player.displayName} />
+        <form action={signOut}>
+          <Tooltip title={`Sign out${userEmail ? ` of ${userEmail}` : ""}`}>
+            <IconButton
+              type="submit"
+              aria-label="Sign out"
+              size="small"
+              sx={{ color: "text.secondary" }}
+            >
+              <LogoutOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </form>
       </Toolbar>
     </AppBar>
   );

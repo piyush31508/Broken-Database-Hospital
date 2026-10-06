@@ -22,6 +22,7 @@ type AppShellProps = {
   cases: CaseBrief[];
   hospital: HospitalStatus;
   player: PlayerStats;
+  userEmail: string;
   initialCaseId?: string;
 };
 
@@ -29,6 +30,7 @@ export function AppShell({
   cases,
   hospital,
   player,
+  userEmail,
   initialCaseId,
 }: AppShellProps) {
   const theme = useTheme();
@@ -198,6 +200,7 @@ export function AppShell({
         <Header
           hospital={hospital}
           player={gamePlayer}
+          userEmail={userEmail}
           onMenuClick={() => setMobileOpen(true)}
         />
       </Box>
@@ -258,7 +261,6 @@ export function AppShell({
           {selectedCase ? (
             <CasePanel
               caseItem={selectedCase}
-              playerId={gamePlayer.id}
               onCaseSolved={handleCaseSolved}
             />
           ) : (
