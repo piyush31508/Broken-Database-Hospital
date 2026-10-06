@@ -24,6 +24,7 @@ import { validateCaseResult } from "@/lib/game/case-rules";
 
 type CasePanelProps = {
   caseItem: CaseBrief;
+  playerId: string;
   onCaseSolved: (caseId: string) => void;
 };
 
@@ -35,7 +36,7 @@ type QueryState = {
   executed: boolean;
 };
 
-export function CasePanel({ caseItem, onCaseSolved }: CasePanelProps) {
+export function CasePanel({ caseItem, playerId, onCaseSolved }: CasePanelProps) {
   const [query, setQuery] = useState(caseItem.brokenQuery);
   const [caseSolved, setCaseSolved] = useState(false);
   const [caseMessage, setCaseMessage] = useState("");
@@ -106,6 +107,7 @@ export function CasePanel({ caseItem, onCaseSolved }: CasePanelProps) {
         },
         body: JSON.stringify({
           query,
+          playerId,
         }),
       });
   

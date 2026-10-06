@@ -1,32 +1,46 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
 import {
   getSupabaseServerConfig,
   isSupabaseConfigured,
 } from "@/lib/supabase/config";
 
-/**
- * Server-only Supabase client.
- *
- * The RPC lives in the public schema, so the client uses
- * public as its default schema.
- *
- * The RPC itself queries the hospital schema.
- */
-export function createServerClient(): SupabaseClient {
+export async function createServerClient() {
   const { url, serverKey } = getSupabaseServerConfig();
 
-  return createClient(url, serverKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+  const cookieStore = await cookies();
+
+  return createSupabaseServerClient(
+    url,
+    serverKey,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(
+              ({ name, value, options }) => {
+                cookieStore.set(
+                  name,
+                  value,
+                  options,
+                );
+              },
+            );
+          } catch {
+            // Server components may not allow cookie writes.
+          }
+        },
+      },
     },
-    db: {
-      schema: "public",
-    },
-  });
+  );
 }
 
-export function tryCreateServerClient(): SupabaseClient | null {
+export async function tryCreateServerClient() {
   if (!isSupabaseConfigured()) {
     return null;
   }
@@ -34,4 +48,7 @@ export function tryCreateServerClient(): SupabaseClient | null {
   return createServerClient();
 }
 
-export { getSupabaseServerConfig, isSupabaseConfigured };
+export {
+  getSupabaseServerConfig,
+  isSupabaseConfigured,
+};

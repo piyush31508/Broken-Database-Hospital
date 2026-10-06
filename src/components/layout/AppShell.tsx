@@ -82,9 +82,13 @@ export function AppShell({
       return;
     }
   
-    // Mark the solved case as resolved and unlock Case 002.
-    setGameCases((currentCases) =>
-      currentCases.map((caseItem) => {
+    setGameCases((currentCases) => {
+      const solvedIndex = currentCases.findIndex(
+        (caseItem) => caseItem.id === caseId,
+      );
+  
+      return currentCases.map((caseItem, index) => {
+        // Mark the current case as resolved
         if (caseItem.id === caseId) {
           return {
             ...caseItem,
@@ -92,8 +96,9 @@ export function AppShell({
           };
         }
   
+        // Unlock the next case
         if (
-          caseItem.id === "case-002" &&
+          index === solvedIndex + 1 &&
           caseItem.status === "locked"
         ) {
           return {
@@ -103,10 +108,10 @@ export function AppShell({
         }
   
         return caseItem;
-      }),
-    );
+      });
+    });
   
-    // Award XP and update player stats.
+    // Award XP and update player stats
     setGamePlayer((currentPlayer) => ({
       ...currentPlayer,
       xp: currentPlayer.xp + solvedCase.xpReward,
@@ -253,6 +258,7 @@ export function AppShell({
           {selectedCase ? (
             <CasePanel
               caseItem={selectedCase}
+              playerId={gamePlayer.id}
               onCaseSolved={handleCaseSolved}
             />
           ) : (

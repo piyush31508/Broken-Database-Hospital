@@ -33,44 +33,65 @@ WHERE a.status = 'waiting'
     status: "locked",
     xpReward: 180,
     estimatedMinutes: 10,
+  
     summary:
       "Patients are receiving the same medication twice. A pharmacy query is not de-duplicating refill requests correctly.",
+  
     symptoms: [
       "Same Rx ID appears multiple times",
       "Inventory depleting faster than expected",
       "Alerts firing on controlled substances",
     ],
-    brokenQuery: `SELECT patient_id, medication, dosage, COUNT(*) as fills
-FROM prescriptions
-WHERE filled_at >= CURRENT_DATE - 7
-GROUP BY patient_id
-HAVING COUNT(*) > 1;`,
+  
+    brokenQuery: `SELECT
+    patient_id,
+    m.medication_name,
+    dosage,
+    COUNT(*) AS fills
+  FROM prescriptions p
+  JOIN medications m
+    ON p.medication_id = m.id
+  WHERE filled_at >= CURRENT_DATE - 7
+  GROUP BY patient_id
+  HAVING COUNT(*) > 1;`,
+  
     expectedOutcome:
       "Identify patients with duplicate fills of the same medication in the last 7 days.",
+  
     tablesInvolved: ["prescriptions", "medications"],
   },
   {
     id: "case-003",
-    title: "OR Schedule Collision",
+    title: "OR Schedule Bottleneck",
     department: "Surgery",
     severity: "critical",
     status: "locked",
     xpReward: 300,
     estimatedMinutes: 15,
+  
     summary:
-      "Two surgeries are booked for the same operating room at the same time. The availability check query is lying.",
+      "The operating room schedule is taking too long to load. Today's surgeries are being searched through thousands of historical records.",
+  
     symptoms: [
-      "Double-booked OR-3 at 09:00",
-      "Conflict detector returns false negatives",
-      "Surgeons arriving to occupied rooms",
+      "OR schedule takes several seconds to load",
+      "Database CPU spikes during morning scheduling",
+      "Query scans thousands of historical surgeries",
     ],
-    brokenQuery: `SELECT o.room_name, s.start_time, s.end_time, s.surgeon
-FROM operating_rooms o
-LEFT JOIN surgeries s ON o.id = s.room_id
-WHERE s.start_time = '09:00:00'
-  AND s.date = CURRENT_DATE;`,
+  
+    brokenQuery: `SELECT
+    o.room_name,
+    s.start_time,
+    s.end_time,
+    s.surgeon
+  FROM operating_rooms o
+  JOIN surgeries s
+    ON o.id = s.room_id
+  WHERE s.surgery_date = CURRENT_DATE
+  ORDER BY s.start_time;`,
+  
     expectedOutcome:
-      "Detect overlapping surgery windows for each operating room today.",
+      "Improve the OR schedule query performance by creating an index that efficiently filters today's surgeries.",
+  
     tablesInvolved: ["operating_rooms", "surgeries"],
   },
   {
@@ -96,52 +117,6 @@ LIMIT 50;`,
     expectedOutcome:
       "Show the 50 most recent final lab results, newest first, with NULLs last.",
     tablesInvolved: ["lab_results"],
-  },
-  {
-    id: "case-005",
-    title: "Billing Code Mismatch",
-    department: "Finance",
-    severity: "low",
-    status: "locked",
-    xpReward: 90,
-    estimatedMinutes: 6,
-    summary:
-      "Insurance claims are rejecting procedure codes that do not match the visit diagnosis. Unlock after resolving two critical cases.",
-    symptoms: [
-      "Claim rejection rate spiked 40%",
-      "ICD-10 / CPT pairs misaligned",
-      "Revenue cycle stalled for elective visits",
-    ],
-    brokenQuery: `SELECT v.visit_id, v.diagnosis_code, b.procedure_code
-FROM visits v
-JOIN billing b ON v.visit_id = b.visit_id
-WHERE b.claim_status = 'rejected';`,
-    expectedOutcome:
-      "List rejected claims where diagnosis and procedure codes violate the mapping table.",
-    tablesInvolved: ["visits", "billing", "code_mappings"],
-  },
-  {
-    id: "case-006",
-    title: "Nurse Shift Overlap",
-    department: "Staffing",
-    severity: "moderate",
-    status: "locked",
-    xpReward: 140,
-    estimatedMinutes: 9,
-    summary:
-      "Resolved: overlapping nurse shifts on Ward B were caused by an exclusive BETWEEN that missed boundary collisions.",
-    symptoms: [
-      "Double coverage on Ward B nights",
-      "Payroll overtime anomalies",
-      "Roster view missing edge cases",
-    ],
-    brokenQuery: `SELECT n.name, s.ward, s.shift_start, s.shift_end
-FROM nurses n
-JOIN shifts s ON n.id = s.nurse_id
-WHERE s.shift_start BETWEEN '19:00' AND '07:00';`,
-    expectedOutcome:
-      "Find nurses with overlapping shifts on the same ward within a 24-hour window.",
-    tablesInvolved: ["nurses", "shifts"],
   },
 ];
 
